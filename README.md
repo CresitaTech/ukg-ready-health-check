@@ -1,1 +1,0 @@
-# ukg-ready-health-check
