@@ -1,0 +1,40 @@
+OPALLIOS
+UKG Ready Health Check
+CSM Customer Referral & Intake Form
+Confidential — For Opallios Internal Use Only
+Complete this form before introducing Opallios to a referred customer. The quality of Health Check findings is directly proportional to the quality of information provided here. All sections should be completed as thoroughly as possible.
+SECTION 1 — CSM & REFERRAL IDENTIFICATION
+
+CSM InformationCSM Full NameFirst and last nameCSM EmailUKG internal emailCSM Region / Territorye.g., Southeast, Mid-Atlantic, WestReferral DateMM/DD/YYYYOpallios Engagement ContactName of Opallios point of contact, if known
+SECTION 2 — CUSTOMER PROFILE
+
+Customer IdentificationCustomer / Company NameLegal entity name as in UKG accountIndustry / Verticale.g., Healthcare, Orthopaedics, Retail, ManufacturingPrimary Customer ContactName, title, emailSecondary Contact (if any)Name, title, emailUKG Account IDAs listed in UKG CRM or Support portalNumber of Active EmployeesApproximate headcountNumber of EINs (Tax IDs)How many distinct employer identification numbersNumber of Locations / SitesPhysical locations or cost centersGeographic DistributionStates, regions, or countries where employees are located
+SECTION 3 — HEALTH CHECK TRIGGER / CATEGORIZATION
+
+Primary Reason for Health Check ReferralPrimary Category (select one)?  At Risk of Churn     ?  Low Adoption / Low Engagement     ?  Poor CSAT / NPS     ?  Renewal UncertaintyBrief Description of ConcernIn 2–3 sentences, describe the specific situationHas the customer escalated or expressed churn intent?Yes / No — if Yes, provide contextRenewal Date (if known)MM/DD/YYYY or approximate quarterCSM's Desired Outcome from Health Checke.g., identify quick wins, build optimization business case, reduce churn risk
+SECTION 4 — UKG PLATFORM LICENSE & USAGE
+
+Licensed Modules — check all that the customer has license forLicensed (Group 1)?  Workforce Management     ?  Payroll     ?  Benefits AdministrationLicensed (Group 2)?  Core HR     ?  Talent / Recruiting     ?  OnboardingLicensed (Group 3)?  Performance Management     ?  Learning Management (LMS)     ?  CompensationLicensed (Group 4)?  UKG Ready Scheduler     ?  Analytics / Reporting     ?  UKG Bryte AIOther Licensed ModulesList any additional licensed modules not above
+Actual UsageActively Implemented ModulesList only modules that are live and in use todayLicensed But NOT ImplementedModules licensed but not yet deployed or usedModules with Low AdoptionWhere engagement or utilization is known to be poorIntegration PointsThird-party systems connected to UKG (ERP, ATS, GL, Benefits Carriers)
+SECTION 5 — IMPLEMENTATION & CONFIGURATION HISTORY
+
+Go-Live & Configuration HistoryOriginal Go-Live DateMM/YYYYImplementation Partner (original)Partner name or 'UKG Direct'Any subsequent re-implementations or major upgrades?Yes / No — if Yes, describe scope and dateSignificant configuration changes post go-live?Yes / NoIf Yes — When were changes made?Approximate date(s) and descriptionWho made the changes?Internal admin, UKG, third-party partnerIs configuration change documented?Yes / No / UnknownHas PayCalc 2.0 been adopted?Yes / No / Unknown / In ProgressHas Accruals 2.0 been adopted?Yes / No / Unknown / In Progress
+SECTION 6 — OPERATIONAL & ADMINISTRATIVE MODEL
+
+How the Customer Manages Their UKG EnvironmentWho manages UKG day-to-day?e.g., dedicated HR admin, shared HR/Payroll team, IT, outsourcedNumber of UKG Admins / Super UsersApproximate number with admin-level accessFormal change management process for UKG?Yes / No / Ad hoc — describeHow is payroll validated before finalization?Describe manual review steps, checklists, or toolsPayroll audit frequencye.g., monthly, per cycle, ad hocHow are timecards reviewed and approved?Describe manager approval process and manual stepsHow is accrual management handled?Manual monitoring, automated, or combinationKnown recurring operational pain pointsOpen text — anything the team has complained about repeatedlyReliance on specific individuals?Yes / No — if Yes, describe the dependency risk
+SECTION 7 — SUPPORT TICKET HISTORY (LAST 6 MONTHS)
+
+A ticket summary is one of the most valuable inputs to the Health Check. If possible, export or summarize the customer's UKG Support ticket log for the past 6 months before completing this section.
+Support Ticket SummaryTotal Tickets (Last 6 Months)Count from UKG Support portalTop 3 Ticket Categories / Themese.g., payroll errors, time calc issues, reporting, accrualsOpen / unresolved critical tickets?Yes / No — describe if YesRecurring ticket patterns?Issues logged more than onceAverage Ticket Resolution TimeIf knownAny escalations to UKG leadership?Yes / No — describe if Yes
+Ticket Details / Additional Context (paste or summarize ticket log here)
+
+
+
+SECTION 8 — AI & ANALYTICS READINESS
+
+UKG Bryte AI / Analytics ReadinessCustomer interested in Bryte AI?Yes / No / UnknownAny AI functionality explored or piloted?Describe if applicableKnown data quality or integrity concerns?Yes / No — describe if knownHow is reporting currently handled?e.g., native UKG reports, Excel exports, BI toolExecutive dashboards available?Yes / No — if No, describe current approachCompliance or data governance concerns?Audit findings, compliance gaps, data sensitivity
+SECTION 9 — ADDITIONAL CONTEXT & ATTACHMENTS
+
+Additional InformationRecent organizational changes?Mergers, acquisitions, leadership changes, restructuringBudget allocated for optimization work?Yes / No / Unknown — approximate range if knownCustomer worked with Opallios before?Yes / No — if Yes, describe prior engagementPolitical or relationship sensitivities?Stakeholder concerns, prior negative consultant experiencesRecommended introduction approach?e.g., executive briefing, working session, informal callAttachments ProvidedList any files attached: org chart, ticket export, prior assessment, etc.
+OPALLIOS  |  UKG Ready Optimization & Advisory Services  |  info@opallios.com  |  1-(888)-205-4058
+Confidential — For Opallios and authorized UKG CSM personnel only
