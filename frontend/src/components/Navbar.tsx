@@ -2,9 +2,10 @@ import React from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './Button';
+import OpalliosLogo from '../assets/Opallios_logo.jpg';
 
 export const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isManager } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -13,23 +14,22 @@ export const Navbar = () => {
     navigate('/login');
   };
 
+  const dashboardPath = isManager ? '/manager' : '/dashboard';
+
   return (
     <header className="navbar">
       <div className="navbar-inner">
         {/* Brand */}
         <div
           style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}
-          onClick={() => navigate(user ? '/dashboard' : '/login')}
+          onClick={() => navigate(user ? dashboardPath : '/login')}
         >
           <div style={{
-            width: 36, height: 36,
-            background: 'var(--brand-primary)',
-            borderRadius: 8,
+            width: 46, height: 46, overflow: 'hidden', borderRadius: 8,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
           }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="var(--brand-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <img src={OpalliosLogo} alt="Opallios Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <div>
             <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--brand-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>
@@ -46,11 +46,11 @@ export const Navbar = () => {
           {user ? (
             <>
               <Link
-                to="/dashboard"
+                to={dashboardPath}
                 style={{
                   fontSize: '0.875rem',
                   fontWeight: 600,
-                  color: location.pathname === '/dashboard' ? 'var(--brand-accent)' : 'var(--text-secondary)',
+                  color: location.pathname === dashboardPath ? 'var(--brand-accent)' : 'var(--text-secondary)',
                   textDecoration: 'none',
                   padding: '0.25rem 0.5rem',
                   borderRadius: 6,

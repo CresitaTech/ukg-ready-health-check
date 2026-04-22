@@ -191,7 +191,7 @@ export const Dashboard = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => navigate(`/intake/${sub.id}`)}
+                            onClick={() => navigate(isCompleted ? `/view/${sub.id}` : `/intake/${sub.id}`)}
                           >
                             {isCompleted ? 'View' : 'Resume'}
                           </Button>
