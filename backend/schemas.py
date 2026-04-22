@@ -6,6 +6,7 @@ class UserCreate(BaseModel):
     name: str
     email: EmailStr
     password: str
+    role: Optional[str] = "csm"
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -15,6 +16,7 @@ class UserResponse(BaseModel):
     id: int
     name: str
     email: EmailStr
+    role: str
 
     class Config:
         from_attributes = True
@@ -34,7 +36,26 @@ class SubmissionUpdate(SubmissionBase):
 class SubmissionResponse(SubmissionBase):
     id: int
     user_id: int
+    has_updates: bool = False
     last_updated: datetime
 
     class Config:
         from_attributes = True
+
+class SubmissionWithUser(SubmissionBase):
+    id: int
+    user_id: int
+    has_updates: bool = False
+    last_updated: datetime
+    csm_name: Optional[str] = None
+    csm_email: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str

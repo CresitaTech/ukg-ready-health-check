@@ -12,6 +12,9 @@ class User(Base):
     name = Column(String, index=True)
     email = Column(String, unique=True, index=True)
     password_hash = Column(String)
+    role = Column(String, default="csm")  # csm | manager
+    reset_password_token = Column(String, index=True, nullable=True)
+    reset_password_expires = Column(DateTime, nullable=True)
 
     submissions = relationship("Submission", back_populates="user")
 
@@ -24,6 +27,8 @@ class Submission(Base):
     form_data = Column(Text, default="{}") # Store JSON as text
     current_section = Column(Integer, default=1)
     status = Column(String, default="draft") # draft, completed
+    has_updates = Column(Integer, default=0) # 0 or 1 (SQLite handles bool as int)
+    was_completed = Column(Integer, default=0) # 0 or 1
     last_updated = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
     user = relationship("User", back_populates="submissions")

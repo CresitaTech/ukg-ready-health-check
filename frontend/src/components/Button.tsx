@@ -1,13 +1,14 @@
-import React, { ButtonHTMLAttributes } from 'react';
+import { useState } from 'react';
+import type { ButtonHTMLAttributes, FC, CSSProperties, ReactNode } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
-  leftIcon?: React.ReactNode;
+  leftIcon?: ReactNode;
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const styles: Record<string, CSSProperties> = {
   base: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -41,14 +42,14 @@ const hoverMap: Record<string, string> = {
   danger:    '#b91c1c',
 };
 
-export const Button: React.FC<ButtonProps> = ({
+export const Button: FC<ButtonProps> = ({
   children, variant = 'primary', size = 'md', isLoading = false,
   leftIcon, style, ...props
 }) => {
-  const [hovered, setHovered] = React.useState(false);
+  const [hovered, setHovered] = useState(false);
   const disabled = props.disabled || isLoading;
 
-  const computedStyle: React.CSSProperties = {
+  const computedStyle: CSSProperties = {
     ...styles.base,
     ...styles[size],
     ...styles[variant],

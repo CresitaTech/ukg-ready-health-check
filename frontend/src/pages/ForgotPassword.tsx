@@ -2,42 +2,42 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import OpalliosLogo from '../assets/Opallios_logo.jpg';
 
-const registerSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
+const schema = z.object({
   email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
 });
-type RegisterFormValues = z.infer<typeof registerSchema>;
+type FormValues = z.infer<typeof schema>;
 
-
-export const Register = () => {
+export const ForgotPassword = () => {
   const [serverError, setServerError] = useState('');
   const [success, setSuccess] = useState(false);
-  const navigate = useNavigate();
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
+    resolver: zodResolver(schema),
   });
 
-  const onSubmit = async (data: RegisterFormValues) => {
+  const onSubmit = async (data: FormValues) => {
     setServerError('');
+    setSuccess(false);
+    
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/auth/register`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, role: 'csm' }),
+        body: JSON.stringify(data),
       });
+      
+      const resData = await res.json();
+      
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || 'Registration failed');
+        throw new Error(resData.detail || 'An error occurred');
       }
+      
       setSuccess(true);
-      setTimeout(() => navigate('/login'), 1500);
     } catch (err: any) {
       setServerError(err.message);
     }
@@ -45,7 +45,6 @@ export const Register = () => {
 
   return (
     <div className="auth-page">
-      {/* Sidebar */}
       <div className="auth-sidebar">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginBottom: '3rem' }}>
@@ -56,40 +55,29 @@ export const Register = () => {
           </div>
 
           <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: '#fff', lineHeight: 1.25, marginBottom: '1.25rem' }}>
-            Create your<br/>workspace
+            Password<br/>Recovery
           </h1>
           <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.7 }}>
-            Register to begin creating and managing UKG Ready Health Check referrals for your customers.
+            Enter your email to receive a password reset link.
           </p>
         </div>
-        <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>
-          Confidential — For Opallios & authorized UKG CSM personnel only.
-        </p>
       </div>
 
-      {/* Form */}
       <div className="auth-main">
         <div className="auth-form-card">
           <div style={{ marginBottom: '2rem' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.375rem' }}>Create an account</h2>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>One workspace for all your referrals</p>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.375rem' }}>Forgot Password</h2>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>We will send you a reset link if your account exists.</p>
           </div>
 
           {success ? (
             <div className="alert alert-success">
-              ✓ Account created successfully! Redirecting to login…
+              If an account exists with that email, a password reset link has been sent. Please check your inbox.
             </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
               {serverError && <div className="alert alert-danger">{serverError}</div>}
 
-              <Input
-                label="Full name"
-                type="text"
-                placeholder="Jane Doe"
-                registration={register('name')}
-                error={errors.name?.message}
-              />
               <Input
                 label="Work email"
                 type="email"
@@ -97,26 +85,18 @@ export const Register = () => {
                 registration={register('email')}
                 error={errors.email?.message}
               />
-              <Input
-                label="Password"
-                type="password"
-                placeholder="Minimum 6 characters"
-                registration={register('password')}
-                error={errors.password?.message}
-              />
-
 
               <div style={{ paddingTop: '0.5rem' }}>
                 <Button type="submit" isLoading={isSubmitting} style={{ width: '100%' }} size="lg">
-                  Create account
+                  Send Reset Link
                 </Button>
               </div>
             </form>
           )}
 
           <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-            Already have an account?{' '}
-            <Link to="/login" style={{ color: 'var(--brand-accent)', fontWeight: 600 }}>Sign in</Link>
+            Remembered your password?{' '}
+            <Link to="/login" style={{ color: 'var(--brand-accent)', fontWeight: 600 }}>Back to Login</Link>
           </div>
         </div>
       </div>

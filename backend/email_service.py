@@ -16,7 +16,7 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 SENDER_EMAIL = os.getenv("SENDER_EMAIL", SMTP_USERNAME)
 
 # Default internal recipients if none provided
-DEFAULT_INTERNAL_RECIPIENT = os.getenv("INTERNAL_NOTIFICATION_EMAIL", "healthchecks@opallios.com")
+DEFAULT_INTERNAL_RECIPIENT = os.getenv("INTERNAL_NOTIFICATION_EMAIL", "minglaniy@cresitatech.com")
 
 def generate_email_html(customer_name: str, csm_name: str, is_update: bool, submission_id: int) -> str:
     action = "Updated" if is_update else "New"
@@ -149,3 +149,78 @@ def send_submission_email(customer_name: str, csm_email: str, csm_name: str, is_
         print(f"Successfully sent email notification for submission {submission_id}")
     except Exception as e:
         print(f"Failed to send email notification: {e}")
+
+def send_password_reset_email(email: str, name: str, token: str):
+    FRONTEND_URL = os.getenv("FRONTEND_URL")
+    if not FRONTEND_URL:
+        print("Error: FRONTEND_URL environment variable must be set in .env to send reset emails.")
+        return
+        
+    reset_link = f"{FRONTEND_URL.rstrip('/')}/reset-password?token={token}"
+    
+    subject = "Opallios Health Check - Password Reset Request"
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: 'Inter', Helvetica, sans-serif; color: #0f172a; line-height: 1.6; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; }}
+            .header {{ background-color: #0a2540; padding: 20px; border-radius: 8px 8px 0 0; color: white; text-align: center; }}
+            .content {{ padding: 20px; background-color: #f8fafc; border-radius: 0 0 8px 8px; }}
+            .button {{ display: inline-block; background-color: #00a878; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px; margin-bottom: 20px; }}
+            .footer {{ margin-top: 20px; font-size: 12px; color: #94a3b8; text-align: center; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h2>Opallios Health Check Portal</h2>
+            </div>
+            <div class="content">
+                <p>Hello {name},</p>
+                <p>We received a request to reset your password. Click the button below to choose a new password. This link will expire in 1 hour.</p>
+                <div style="text-align: center;">
+                    <a href="{reset_link}" class="button" style="color: white;">Reset Password</a>
+                </div>
+                <p>If you did not request this, please ignore this email or contact support if you have concerns.</p>
+            </div>
+            <div class="footer">
+                This is an automated message from the Opallios UKG Ready Health Check Application.
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    recipients = [email]
+    
+    msg = MIMEMultipart("mixed")
+    msg["Subject"] = subject
+    msg["From"] = SENDER_EMAIL or "noreply@opallios.com"
+    msg["To"] = email
+    
+    msg_body = MIMEMultipart("alternative")
+    msg_body.attach(MIMEText(html_content, "html"))
+    msg.attach(msg_body)
+
+    if not SMTP_USERNAME or not SMTP_PASSWORD:
+        print(f"--- FAKE PASSWORD RESET EMAIL TRIGGERED ---")
+        print(f"To: {email}")
+        print(f"Link: {reset_link}")
+        print("--- END OF EMAIL ---")
+        return
+
+    try:
+        if SMTP_PORT == 465:
+            with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+                server.login(SMTP_USERNAME, SMTP_PASSWORD)
+                server.sendmail(msg["From"], recipients, msg.as_string())
+        else:
+            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+                server.starttls()
+                server.login(SMTP_USERNAME, SMTP_PASSWORD)
+                server.sendmail(msg["From"], recipients, msg.as_string())
+        print(f"Successfully sent password reset email to {email}")
+    except Exception as e:
+        print(f"Failed to send password reset email: {e}")

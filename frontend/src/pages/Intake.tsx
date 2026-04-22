@@ -27,16 +27,28 @@ const YNIP = [...YN, { label: 'Unknown', value: 'Unknown' }, { label: 'In Progre
 export const Intake = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { token, user } = useAuth();
+  const { token, user, isManager } = useAuth();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  const { register, watch, reset, setValue } = useForm({ defaultValues: {} as Record<string, string> });
+  const { register, watch, reset, setValue, trigger, formState: { errors } } = useForm({ defaultValues: {} as Record<string, any> });
   const formData = watch();
   const saveTimerRef = useRef<number | null>(null);
+
+  const SECTION_FIELDS: Record<number, string[]> = {
+    1: ['csmName', 'csmEmail'],
+    2: ['customerName', 'accountId'],
+    3: ['primaryReason', 'concernDescription', 'escalated'],
+    4: [], // Section 4 is special: custom "any module" validation
+    5: ['subsequentUpgrades', 'configChanges', 'configDocumented', 'payCalcAdoption', 'accrualsAdoption'],
+    6: ['individualReliance'],
+    7: ['totalTickets', 'openCriticalTickets', 'escalationsToLeadership'],
+    8: ['interestedInBryteAI', 'dataQualityConcerns', 'executiveDashboards'],
+    9: ['budgetAllocated', 'workedWithOpallios'],
+  };
 
   useEffect(() => {
     if (!token || !id) return;
@@ -56,7 +68,7 @@ export const Intake = () => {
         setCurrentStep(data.current_section || 1);
         setIsCompleted(data.status === 'completed');
       } else {
-        navigate('/dashboard');
+        navigate(isManager ? '/manager' : '/dashboard');
       }
     })();
   }, [id, token, reset, navigate]);
@@ -68,7 +80,7 @@ export const Intake = () => {
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [formData]);
 
-  const save = async (data: Record<string, string>, step: number, status = 'draft', pdfBase64?: string) => {
+  const save = async (data: Record<string, any>, step: number, status = 'draft', pdfBase64?: string) => {
     if (!token || !id) return;
     setIsSaving(true);
     try {
@@ -89,7 +101,25 @@ export const Intake = () => {
     }
   };
 
+  const validateCurrentSection = async () => {
+    // Special check for section 4
+    if (currentStep === 4) {
+      const modules = Object.keys(formData).filter(k => k.startsWith('module_') && formData[k]);
+      if (modules.length === 0) {
+        // Return false to block progression; error will be shown via custom UI in section 4
+        return false;
+      }
+    }
+    
+    const fields = SECTION_FIELDS[currentStep] || [];
+    if (fields.length === 0) return true;
+    return await trigger(fields as any);
+  };
+
   const goNext = async () => {
+    const isValid = await validateCurrentSection();
+    if (!isValid) return;
+
     await save(formData, currentStep + 1);
     setCurrentStep(s => s + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -102,6 +132,9 @@ export const Intake = () => {
   };
 
   const onSubmit = async () => {
+    const isValid = await validateCurrentSection();
+    if (!isValid) return;
+
     // Generate PDF as base64 to attach to email notification
     let pdfBase64: string | undefined;
     try {
@@ -115,7 +148,7 @@ export const Intake = () => {
       console.warn('PDF generation for email failed:', e);
     }
     await save(formData, SECTIONS.length, 'completed', pdfBase64);
-    navigate('/dashboard');
+    navigate(`/view/${id}`);
   };
 
   const section = SECTIONS[currentStep - 1];
@@ -177,13 +210,14 @@ export const Intake = () => {
           }}>
             <div style={{ fontSize: '3rem' }}>✅</div>
             <span style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--text-primary)' }}>This submission is completed</span>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>View-only mode</span>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Opening view-only report…</span>
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-              <Button variant="outline" onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
-              <Button variant="primary" onClick={async () => {
-                setIsCompleted(false);
-                await save(formData, currentStep, 'draft');
-              }}>Unlock & Edit</Button>
+              <Button variant="outline" onClick={() => navigate(isManager ? '/manager' : '/dashboard')}>
+                {isManager ? '← Back to Manager Dashboard' : 'Back to Dashboard'}
+              </Button>
+              <Button variant="primary" onClick={() => navigate(`/view/${id}`)}>
+                👁 View Report
+              </Button>
             </div>
           </div>
         )}
@@ -202,8 +236,23 @@ export const Intake = () => {
           {currentStep === 1 && (
             <div className="form-stack">
               <div className="grid-2">
-                <Input label="CSM Full Name" placeholder="First and last name" hint="Your UKG-registered name" registration={register('csmName')} />
-                <Input label="CSM Email" type="email" placeholder="name@ukg.com" hint="UKG internal email address" registration={register('csmEmail')} />
+                <Input 
+                  label="CSM Full Name" 
+                  placeholder="First and last name" 
+                  hint="Your UKG-registered name" 
+                  required
+                  registration={register('csmName', { required: 'CSM Name is required' })} 
+                  error={errors.csmName?.message as string}
+                />
+                <Input 
+                  label="CSM Email" 
+                  type="email" 
+                  placeholder="name@ukg.com" 
+                  hint="UKG internal email address" 
+                  required
+                  registration={register('csmEmail', { required: 'CSM Email is required' })} 
+                  error={errors.csmEmail?.message as string}
+                />
               </div>
               <div className="grid-2">
                 <Input label="CSM Region / Territory" placeholder="e.g. Southeast, Mid-Atlantic" registration={register('csmRegion')} />
@@ -217,11 +266,23 @@ export const Intake = () => {
           {currentStep === 2 && (
             <div className="form-stack">
               <div className="grid-2">
-                <Input label="Customer / Company Name" placeholder="Legal entity name as in UKG account" registration={register('customerName')} required />
+                <Input 
+                  label="Customer / Company Name" 
+                  placeholder="Legal entity name as in UKG account" 
+                  required 
+                  registration={register('customerName', { required: 'Customer Name is required' })} 
+                  error={errors.customerName?.message as string}
+                />
                 <Input label="Industry / Vertical" placeholder="e.g. Healthcare, Retail, Manufacturing" registration={register('industry')} />
               </div>
               <div className="grid-2">
-                <Input label="UKG Account ID" placeholder="As listed in UKG CRM or Support portal" registration={register('accountId')} />
+                <Input 
+                  label="UKG Account ID" 
+                  placeholder="As listed in UKG CRM or Support portal" 
+                  required
+                  registration={register('accountId', { required: 'Account ID is required' })} 
+                  error={errors.accountId?.message as string}
+                />
                 <Input label="Number of Active Employees" type="number" placeholder="Approximate headcount" registration={register('headcount')} />
               </div>
               <div className="grid-2">
@@ -246,11 +307,24 @@ export const Intake = () => {
                   { label: 'Poor CSAT / NPS', value: 'poor_csat' },
                   { label: 'Renewal Uncertainty', value: 'renewal_uncertainty' },
                 ]}
-                registration={register('primaryReason')}
+                registration={register('primaryReason', { required: 'Please select a reason' })}
+                error={errors.primaryReason?.message as string}
               />
-              <TextArea label="Brief Description of Concern" placeholder="In 2–3 sentences, describe the specific situation" required registration={register('concernDescription')} />
+              <TextArea 
+                label="Brief Description of Concern" 
+                placeholder="In 2–3 sentences, describe the specific situation" 
+                required 
+                registration={register('concernDescription', { required: 'Please provide a description' })} 
+                error={errors.concernDescription?.message as string}
+              />
               <div className="grid-2">
-                <Select label="Has the customer escalated or expressed churn intent?" options={YN} registration={register('escalated')} />
+                <Select 
+                  label="Has the customer escalated or expressed churn intent?" 
+                  required
+                  options={YN} 
+                  registration={register('escalated', { required: 'Please select an option' })} 
+                  error={errors.escalated?.message as string}
+                />
                 <Input label="Renewal Date (if known)" type="date" registration={register('renewalDate')} />
               </div>
               <TextArea label="Escalation context (if Yes)" placeholder="Describe the escalation or churn intent details…" registration={register('escalationContext')} />
@@ -261,8 +335,14 @@ export const Intake = () => {
           {/* ── Section 4: License & Usage ── */}
           {currentStep === 4 && (
             <div className="form-stack">
+              {/* Custom validation error for Section 4 */}
+              {Object.keys(formData).filter(k => k.startsWith('module_') && formData[k]).length === 0 && (
+                <div style={{ padding: '0.75rem 1rem', background: '#fff5f5', color: '#c53030', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 600, border: '1px solid #feb2b2' }}>
+                  ⚠ Please select at least one licensed module below.
+                </div>
+              )}
               <div className="form-group">
-                <label className="form-label">Licensed Modules — Group 1</label>
+                <label className="form-label">Licensed Modules — Group 1 <span className="required">*</span></label>
                 <div className="checkbox-grid">
                   {['Workforce Management', 'Payroll', 'Benefits Administration'].map(m => (
                     <label key={m} className="checkbox-item">
@@ -321,17 +401,47 @@ export const Intake = () => {
                 <Input label="Original Go-Live Date" placeholder="MM/YYYY" registration={register('goLiveDate')} />
                 <Input label="Implementation Partner (original)" placeholder="Partner name or 'UKG Direct'" registration={register('implementationPartner')} />
               </div>
-              <Select label="Any subsequent re-implementations or major upgrades?" options={YN} registration={register('subsequentUpgrades')} />
+              <Select 
+                label="Any subsequent re-implementations or major upgrades?" 
+                required
+                options={YN} 
+                registration={register('subsequentUpgrades', { required: 'Please select an option' })} 
+                error={errors.subsequentUpgrades?.message as string}
+              />
               <TextArea label="If Yes, describe scope and date" registration={register('upgradeScope')} />
-              <Select label="Significant configuration changes post go-live?" options={YN} registration={register('configChanges')} />
+              <Select 
+                label="Significant configuration changes post go-live?" 
+                required
+                options={YN} 
+                registration={register('configChanges', { required: 'Please select an option' })} 
+                error={errors.configChanges?.message as string}
+              />
               <div className="grid-2">
                 <TextArea label="When were changes made?" placeholder="Approximate date(s) and description" registration={register('configChangeDate')} />
                 <TextArea label="Who made the changes?" placeholder="Internal admin, UKG, third-party partner" registration={register('configChangeWho')} />
               </div>
-              <Select label="Is configuration change documented?" options={YNU} registration={register('configDocumented')} />
+              <Select 
+                label="Is configuration change documented?" 
+                required
+                options={YNU} 
+                registration={register('configDocumented', { required: 'Please select an option' })} 
+                error={errors.configDocumented?.message as string}
+              />
               <div className="grid-2">
-                <Select label="Has PayCalc 2.0 been adopted?" options={YNIP} registration={register('payCalcAdoption')} />
-                <Select label="Has Accruals 2.0 been adopted?" options={YNIP} registration={register('accrualsAdoption')} />
+                <Select 
+                  label="Has PayCalc 2.0 been adopted?" 
+                  required
+                  options={YNIP} 
+                  registration={register('payCalcAdoption', { required: 'Please select an option' })} 
+                  error={errors.payCalcAdoption?.message as string}
+                />
+                <Select 
+                  label="Has Accruals 2.0 been adopted?" 
+                  required
+                  options={YNIP} 
+                  registration={register('accrualsAdoption', { required: 'Please select an option' })} 
+                  error={errors.accrualsAdoption?.message as string}
+                />
               </div>
             </div>
           )}
@@ -349,7 +459,14 @@ export const Intake = () => {
               </div>
               <TextArea label="How is accrual management handled?" placeholder="Manual monitoring, automated, or combination" registration={register('accrualManagement')} />
               <TextArea label="Known recurring operational pain points" placeholder="Anything the team has complained about repeatedly…" registration={register('painPoints')} />
-              <Select label="Reliance on specific individuals?" options={YN} registration={register('individualReliance')} hint="Describes single-point-of-failure risks" />
+              <Select 
+                label="Reliance on specific individuals?" 
+                required
+                options={YN} 
+                registration={register('individualReliance', { required: 'Please select an option' })} 
+                error={errors.individualReliance?.message as string}
+                hint="Describes single-point-of-failure risks" 
+              />
             </div>
           )}
 
@@ -360,13 +477,32 @@ export const Intake = () => {
                 💡 A ticket summary is one of the most valuable inputs. If possible, export or summarize the customer's UKG Support ticket log for the past 6 months before completing this section.
               </div>
               <div className="grid-2">
-                <Input label="Total Tickets (Last 6 Months)" type="number" placeholder="Count from UKG Support portal" registration={register('totalTickets')} />
+                <Input 
+                  label="Total Tickets (Last 6 Months)" 
+                  type="number" 
+                  placeholder="Count from UKG Support portal" 
+                  required
+                  registration={register('totalTickets', { required: 'Please enter total tickets' })} 
+                  error={errors.totalTickets?.message as string}
+                />
                 <Input label="Average Ticket Resolution Time" placeholder="If known" registration={register('resolutionTime')} />
               </div>
               <TextArea label="Top 3 Ticket Categories / Themes" placeholder="e.g. payroll errors, time calc issues, reporting, accruals" registration={register('ticketCategories')} />
               <div className="grid-2">
-                <Select label="Open / unresolved critical tickets?" options={YN} registration={register('openCriticalTickets')} />
-                <Select label="Any escalations to UKG leadership?" options={YN} registration={register('escalationsToLeadership')} />
+                <Select 
+                  label="Open / unresolved critical tickets?" 
+                  required
+                  options={YN} 
+                  registration={register('openCriticalTickets', { required: 'Please select an option' })} 
+                  error={errors.openCriticalTickets?.message as string}
+                />
+                <Select 
+                  label="Any escalations to UKG leadership?" 
+                  required
+                  options={YN} 
+                  registration={register('escalationsToLeadership', { required: 'Please select an option' })} 
+                  error={errors.escalationsToLeadership?.message as string}
+                />
               </div>
               <TextArea label="Recurring ticket patterns (issues logged more than once)" registration={register('ticketPatterns')} />
               <TextArea label="Ticket details / Additional context" placeholder="Paste or summarize ticket log here…" registration={register('ticketDetails')} />
@@ -377,13 +513,31 @@ export const Intake = () => {
           {currentStep === 8 && (
             <div className="form-stack">
               <div className="grid-2">
-                <Select label="Customer interested in Bryte AI?" options={YNU} registration={register('interestedInBryteAI')} />
-                <Select label="Known data quality or integrity concerns?" options={YN} registration={register('dataQualityConcerns')} />
+                <Select 
+                  label="Customer interested in Bryte AI?" 
+                  required
+                  options={YNU} 
+                  registration={register('interestedInBryteAI', { required: 'Please select an option' })} 
+                  error={errors.interestedInBryteAI?.message as string}
+                />
+                <Select 
+                  label="Known data quality or integrity concerns?" 
+                  required
+                  options={YN} 
+                  registration={register('dataQualityConcerns', { required: 'Please select an option' })} 
+                  error={errors.dataQualityConcerns?.message as string}
+                />
               </div>
               <TextArea label="Any AI functionality explored or piloted?" placeholder="Describe if applicable" registration={register('aiFunctionalityExplored')} />
               <TextArea label="How is reporting currently handled?" placeholder="e.g. native UKG reports, Excel exports, BI tool" registration={register('reportingHandled')} />
               <div className="grid-2">
-                <Select label="Executive dashboards available?" options={YN} registration={register('executiveDashboards')} />
+                <Select 
+                  label="Executive dashboards available?" 
+                  required
+                  options={YN} 
+                  registration={register('executiveDashboards', { required: 'Please select an option' })} 
+                  error={errors.executiveDashboards?.message as string}
+                />
               </div>
               <TextArea label="If No, describe current executive reporting approach" registration={register('executiveDashboardAlt')} />
               <TextArea label="Compliance or data governance concerns" placeholder="Audit findings, compliance gaps, data sensitivity" registration={register('complianceConcerns')} />
@@ -394,8 +548,20 @@ export const Intake = () => {
           {currentStep === 9 && (
             <div className="form-stack">
               <TextArea label="Recent organizational changes?" placeholder="Mergers, acquisitions, leadership changes, restructuring" registration={register('recentChanges')} />
-              <Select label="Budget allocated for optimization work?" options={YNU} registration={register('budgetAllocated')} />
-              <Select label="Customer worked with Opallios before?" options={YN} registration={register('workedWithOpallios')} />
+              <Select 
+                label="Budget allocated for optimization work?" 
+                required
+                options={YNU} 
+                registration={register('budgetAllocated', { required: 'Please select an option' })} 
+                error={errors.budgetAllocated?.message as string}
+              />
+              <Select 
+                label="Customer worked with Opallios before?" 
+                required
+                options={YN} 
+                registration={register('workedWithOpallios', { required: 'Please select an option' })} 
+                error={errors.workedWithOpallios?.message as string}
+              />
               <TextArea label="Prior Opallios engagement details" placeholder="If Yes, describe prior engagement" registration={register('priorEngagement')} />
               <TextArea label="Political or relationship sensitivities?" placeholder="Stakeholder concerns, prior negative consultant experiences" registration={register('politicalSensitivities')} />
               <TextArea label="Recommended introduction approach" placeholder="e.g. executive briefing, working session, informal call" registration={register('introApproach')} />

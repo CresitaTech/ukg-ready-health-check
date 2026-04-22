@@ -6,6 +6,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { useAuth } from '../context/AuthContext';
+import OpalliosLogo from '../assets/Opallios_logo.jpg';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -36,7 +37,7 @@ export const Login = () => {
       }
       const resData = await res.json();
       login(resData.access_token, resData.user);
-      navigate('/dashboard');
+      navigate(resData.user?.role === 'manager' ? '/manager' : '/dashboard');
     } catch (err: any) {
       setServerError(err.message);
     }
@@ -47,11 +48,9 @@ export const Login = () => {
       {/* Sidebar */}
       <div className="auth-sidebar">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '3rem' }}>
-            <div style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.12)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="var(--brand-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginBottom: '3rem' }}>
+            <div style={{ width: 48, height: 48, overflow: 'hidden', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+              <img src={OpalliosLogo} alt="Opallios Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <span style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>Opallios</span>
           </div>
@@ -90,7 +89,7 @@ export const Login = () => {
       <div className="auth-main">
         <div className="auth-form-card">
           <div style={{ marginBottom: '2rem' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.375rem' }}>Welcome back</h2>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.375rem' }}>Welcome</h2>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Sign in to access your workspace</p>
           </div>
 
@@ -106,13 +105,20 @@ export const Login = () => {
               registration={register('email')}
               error={errors.email?.message}
             />
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Enter your password"
-              registration={register('password')}
-              error={errors.password?.message}
-            />
+            <div>
+              <Input
+                label="Password"
+                type="password"
+                placeholder="Enter your password"
+                registration={register('password')}
+                error={errors.password?.message}
+              />
+              <div style={{ textAlign: 'right', marginTop: '0.375rem' }}>
+                <Link to="/forgot-password" style={{ fontSize: '0.8125rem', color: 'var(--brand-accent)', fontWeight: 500, textDecoration: 'none' }}>
+                  Forgot password?
+                </Link>
+              </div>
+            </div>
 
             <div style={{ paddingTop: '0.5rem' }}>
               <Button type="submit" isLoading={isSubmitting} style={{ width: '100%' }} size="lg">

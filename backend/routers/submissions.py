@@ -6,8 +6,36 @@ import json
 import models, schemas, auth
 from database import get_db
 import email_service
+from routers.auth import require_manager
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
+
+@router.get("/all", response_model=List[schemas.SubmissionWithUser])
+def get_all_submissions(
+    _manager: models.User = Depends(require_manager),
+    db: Session = Depends(get_db),
+):
+    """Manager-only: returns every submission with the submitting CSM's name and email."""
+    submissions = db.query(models.Submission).filter(
+        models.Submission.status == "completed"
+    ).order_by(models.Submission.last_updated.desc()).all()
+    result = []
+    for sub in submissions:
+        item = schemas.SubmissionWithUser(
+            id=sub.id,
+            user_id=sub.user_id,
+            has_updates=bool(sub.has_updates),
+            customer_name=sub.customer_name,
+            form_data=sub.form_data,
+            current_section=sub.current_section,
+            status=sub.status,
+            last_updated=sub.last_updated,
+            csm_name=sub.user.name if sub.user else None,
+            csm_email=sub.user.email if sub.user else None,
+        )
+        result.append(item)
+    return result
+
 
 @router.get("/", response_model=List[schemas.SubmissionResponse])
 def get_submissions(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
@@ -16,7 +44,11 @@ def get_submissions(db: Session = Depends(get_db), current_user: models.User = D
 
 @router.get("/{submission_id}", response_model=schemas.SubmissionResponse)
 def get_submission(submission_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
-    submission = db.query(models.Submission).filter(models.Submission.id == submission_id, models.Submission.user_id == current_user.id).first()
+    query = db.query(models.Submission).filter(models.Submission.id == submission_id)
+    # Managers can view any submission; CSMs only their own
+    if current_user.role != "manager":
+        query = query.filter(models.Submission.user_id == current_user.id)
+    submission = query.first()
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
     return submission
@@ -56,6 +88,13 @@ def update_submission(
     if submission_update.current_section is not None:
         submission.current_section = submission_update.current_section
     if submission_update.status is not None:
+        # Check if we are completing a draft that was already previously completed
+        if previous_status != "completed" and submission_update.status == "completed":
+            if submission.was_completed:
+                submission.has_updates = 1 # Mark as updated
+            else:
+                submission.was_completed = 1 # Mark as once completed
+        
         submission.status = submission_update.status
         
     # Notification Logic
