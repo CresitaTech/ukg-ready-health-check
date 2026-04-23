@@ -44,6 +44,13 @@ export const ManagerDashboard = () => {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterStatus, tab]);
+
   const API = import.meta.env.VITE_API_BASE_URL || '';
 
   useEffect(() => {
@@ -182,7 +189,8 @@ export const ManagerDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredSubs.map((sub, i) => {
+                    {filteredSubs.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map((sub, index) => {
+                      const i = (currentPage - 1) * rowsPerPage + index;
                       return (
                         <tr key={sub.id} style={{ borderBottom: '1px solid var(--border-subtle)', background: i % 2 === 0 ? 'transparent' : 'var(--neutral-50)', transition: 'background 0.1s' }}>
                           <td style={{ padding: '0.875rem 1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
@@ -252,6 +260,31 @@ export const ManagerDashboard = () => {
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+            {Math.ceil(filteredSubs.length / rowsPerPage) > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderTop: '1px solid var(--border-subtle)', marginTop: '1rem' }}>
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                  Showing {(currentPage - 1) * rowsPerPage + 1} to {Math.min(currentPage * rowsPerPage, filteredSubs.length)} of {filteredSubs.length} reports
+                </span>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredSubs.length / rowsPerPage), p + 1))} 
+                    disabled={currentPage === Math.ceil(filteredSubs.length / rowsPerPage)}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             )}
           </>

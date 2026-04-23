@@ -269,7 +269,7 @@ class PdfBuilder {
     const colW = (CONTENT_W) / modules.length;
     modules.forEach((mod, i) => {
       const key = `module_${mod.replace(/ /g, '_')}`;
-      const checked = checkedMap[key] === true || (checkedMap[key] as unknown) === 'true';
+      const checked = checkedMap[key] === true || (checkedMap[key] as unknown) === 'true' || (checkedMap[key] as unknown) === 'on';
       const x = MARGIN - 2 + i * colW;
 
       // Module pill background
@@ -286,10 +286,11 @@ class PdfBuilder {
         doc.setFillColor(C.accentBg[0], C.accentBg[1], C.accentBg[2]);
         doc.setDrawColor(C.accentBg[0], C.accentBg[1], C.accentBg[2]);
         doc.rect(x + 2, this.y + 2, 5, 5, 'FD');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(6);
-        doc.setTextColor(255, 255, 255);
-        doc.text('✓', x + 2.8, this.y + 6.2);
+        doc.setDrawColor(255, 255, 255);
+        doc.setLineWidth(0.8);
+        doc.line(x + 3.2, this.y + 4.8, x + 4.2, this.y + 5.8);
+        doc.line(x + 4.2, this.y + 5.8, x + 5.8, this.y + 3.2);
+        doc.setLineWidth(0.2);
       } else {
         doc.setFillColor(255, 255, 255);
         doc.setDrawColor(C.accentBg[0], C.accentBg[1], C.accentBg[2]);

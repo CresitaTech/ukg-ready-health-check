@@ -23,6 +23,9 @@ export const Dashboard = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
+
   useEffect(() => {
     fetchSubmissions();
   }, [token]);
@@ -142,8 +145,9 @@ export const Dashboard = () => {
             <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>Click "Start New Referral" to create your first intake form.</p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data-table">
+          <>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="data-table">
               <thead>
                 <tr>
                   <th>#</th>
@@ -155,7 +159,8 @@ export const Dashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {submissions.map((sub, idx) => {
+                {submissions.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map((sub, index) => {
+                  const idx = (currentPage - 1) * rowsPerPage + index;
                   const progress = Math.min(100, Math.round(((sub.current_section - 1) / (TOTAL_SECTIONS - 1)) * 100));
                   const isCompleted = sub.status === 'completed';
                   const isDownloading = downloadingId === sub.id;
@@ -214,6 +219,32 @@ export const Dashboard = () => {
               </tbody>
             </table>
           </div>
+          {Math.ceil(submissions.length / rowsPerPage) > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                Showing {(currentPage - 1) * rowsPerPage + 1} to {Math.min(currentPage * rowsPerPage, submissions.length)} of {submissions.length} referrals
+              </span>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(submissions.length / rowsPerPage), p + 1))} 
+                  disabled={currentPage === Math.ceil(submissions.length / rowsPerPage)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+          </>
         )}
       </div>
     </div>
