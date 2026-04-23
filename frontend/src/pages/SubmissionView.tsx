@@ -68,9 +68,10 @@ function formatDate(iso: string) {
 }
 
 type F = Record<string, string>;
+type SectionProps = { d: F; submission?: SubmissionData | null; token?: string | null };
 
 // ── Section renderers ─────────────────────────────────────────────────────────
-const Section1 = ({ d }: { d: F }) => (
+const Section1 = ({ d }: SectionProps) => (
   <>
     <Grid2>
       <Field label="CSM Full Name"              value={d.csmName} />
@@ -84,7 +85,7 @@ const Section1 = ({ d }: { d: F }) => (
   </>
 );
 
-const Section2 = ({ d }: { d: F }) => (
+const Section2 = ({ d }: SectionProps) => (
   <>
     <Grid2>
       <Field label="Customer / Company Name"    value={d.customerName} />
@@ -104,7 +105,7 @@ const Section2 = ({ d }: { d: F }) => (
   </>
 );
 
-const Section3 = ({ d }: { d: F }) => (
+const Section3 = ({ d }: SectionProps) => (
   <>
     <Field label="Primary Reason for Referral"       value={d.primaryReason} />
     <Field label="Brief Description of Concern"      value={d.concernDescription} />
@@ -124,8 +125,11 @@ const MODULES = [
   'UKG Ready Scheduler', 'Analytics / Reporting', 'UKG Bryte AI',
 ];
 
-const Section4 = ({ d }: { d: F }) => {
-  const checked = MODULES.filter(m => d[`module_${m.replace(/ /g, '_')}`] === 'true' || d[`module_${m.replace(/ /g, '_')}`] === 'on');
+const Section4 = ({ d }: SectionProps) => {
+  const checked = MODULES.filter(m => {
+    const val = d[`module_${m.replace(/ /g, '_')}`] as unknown;
+    return val === true || val === 'true' || val === 'on';
+  });
   return (
     <>
       <div style={{ marginBottom: '1.25rem' }}>
@@ -152,7 +156,7 @@ const Section4 = ({ d }: { d: F }) => {
   );
 };
 
-const Section5 = ({ d }: { d: F }) => (
+const Section5 = ({ d }: SectionProps) => (
   <>
     <Grid2>
       <Field label="Original Go-Live Date"                 value={d.goLiveDate} />
@@ -173,7 +177,7 @@ const Section5 = ({ d }: { d: F }) => (
   </>
 );
 
-const Section6 = ({ d }: { d: F }) => (
+const Section6 = ({ d }: SectionProps) => (
   <>
     <Field label="Who Manages UKG Day-to-Day?"             value={d.dayToDayManager} />
     <Field label="Number of UKG Admins / Super Users"      value={d.numberOfAdmins} />
@@ -189,7 +193,7 @@ const Section6 = ({ d }: { d: F }) => (
   </>
 );
 
-const Section7 = ({ d }: { d: F }) => (
+const Section7 = ({ d }: SectionProps) => (
   <>
     <Grid2>
       <Field label="Total Tickets (Last 6 Months)"  value={d.totalTickets} />
@@ -205,7 +209,7 @@ const Section7 = ({ d }: { d: F }) => (
   </>
 );
 
-const Section8 = ({ d }: { d: F }) => (
+const Section8 = ({ d }: SectionProps) => (
   <>
     <Grid2>
       <Field label="Interested in Bryte AI?"            value={d.interestedInBryteAI} />
@@ -219,17 +223,68 @@ const Section8 = ({ d }: { d: F }) => (
   </>
 );
 
-const Section9 = ({ d }: { d: F }) => (
-  <>
-    <Field label="Recent Organizational Changes?"    value={d.recentChanges} />
-    <Field label="Budget Allocated for Work?"        value={d.budgetAllocated} />
-    <Field label="Worked with Opallios Before?"      value={d.workedWithOpallios} />
-    <Field label="Prior Opallios Engagement Details" value={d.priorEngagement} />
-    <Field label="Political / Relationship Sensitivities" value={d.politicalSensitivities} />
-    <Field label="Recommended Introduction Approach" value={d.introApproach} />
-    <Field label="Attachments Provided"              value={d.attachments} />
-  </>
-);
+const Section9 = ({ d, submission, token }: SectionProps) => {
+  const handleDownload = async (filename: string) => {
+    if (!submission || !token) return;
+    const API = import.meta.env.VITE_API_BASE_URL || '';
+    try {
+      const res = await fetch(`${API}/attachments/download/${submission.id}/${encodeURIComponent(filename)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch(err) {
+      alert("Failed to download attachment");
+    }
+  };
+
+  const attachments = d.attachments ? d.attachments.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+  return (
+    <>
+      <Field label="Recent Organizational Changes?"    value={d.recentChanges} />
+      <Field label="Budget Allocated for Work?"        value={d.budgetAllocated} />
+      <Field label="Worked with Opallios Before?"      value={d.workedWithOpallios} />
+      <Field label="Prior Opallios Engagement Details" value={d.priorEngagement} />
+      <Field label="Political / Relationship Sensitivities" value={d.politicalSensitivities} />
+      <Field label="Recommended Introduction Approach" value={d.introApproach} />
+      
+      <div style={{ marginBottom: '1.25rem' }}>
+        <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.055em', color: 'var(--text-tertiary)', marginBottom: '0.625rem' }}>
+          Attachments Provided
+        </div>
+        {attachments.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {attachments.map(filename => (
+              <div key={filename} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'var(--neutral-50)', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--border-subtle)' }}>
+                <span style={{ fontSize: '1.2rem' }}>📎</span>
+                <span style={{ fontSize: '0.9375rem', color: 'var(--text-primary)', flex: 1, wordBreak: 'break-all' }}>{filename}</span>
+                <button 
+                  onClick={() => handleDownload(filename)}
+                  style={{ background: 'var(--brand-accent-subtle)', border: '1px solid var(--brand-accent)', color: 'var(--brand-accent)', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, padding: '0.375rem 0.75rem', borderRadius: '6px', transition: 'all 0.15s' }}
+                  onMouseOver={(e) => (e.currentTarget.style.background = 'var(--brand-accent)', e.currentTarget.style.color = '#fff')}
+                  onMouseOut={(e) => (e.currentTarget.style.background = 'var(--brand-accent-subtle)', e.currentTarget.style.color = 'var(--brand-accent)')}
+                >
+                  Download
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ fontSize: '0.9375rem', color: 'var(--text-tertiary)', background: 'var(--neutral-50)', padding: '0.625rem 0.875rem', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--border-subtle)', fontStyle: 'italic' }}>
+            No attachments provided
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
 
 const SECTION_COMPONENTS = [Section1, Section2, Section3, Section4, Section5, Section6, Section7, Section8, Section9];
 
@@ -407,7 +462,7 @@ export const SubmissionView = () => {
         </div>
 
         {/* Fields */}
-        <SectionContent d={formData} />
+        <SectionContent d={formData} submission={submission} token={token} />
 
         {/* Prev / Next navigation */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>

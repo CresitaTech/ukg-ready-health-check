@@ -37,10 +37,10 @@ async def upload_attachment(
     current_user: models.User = Depends(auth.get_current_user),
 ):
     # Verify submission belongs to user
-    submission = db.query(models.Submission).filter(
-        models.Submission.id == submission_id,
-        models.Submission.user_id == current_user.id
-    ).first()
+    query = db.query(models.Submission).filter(models.Submission.id == submission_id)
+    if current_user.role != "manager":
+        query = query.filter(models.Submission.user_id == current_user.id)
+    submission = query.first()
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
 
@@ -77,10 +77,10 @@ def list_attachments(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
-    submission = db.query(models.Submission).filter(
-        models.Submission.id == submission_id,
-        models.Submission.user_id == current_user.id,
-    ).first()
+    query = db.query(models.Submission).filter(models.Submission.id == submission_id)
+    if current_user.role != "manager":
+        query = query.filter(models.Submission.user_id == current_user.id)
+    submission = query.first()
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
 
@@ -100,10 +100,10 @@ def delete_attachment(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
-    submission = db.query(models.Submission).filter(
-        models.Submission.id == submission_id,
-        models.Submission.user_id == current_user.id,
-    ).first()
+    query = db.query(models.Submission).filter(models.Submission.id == submission_id)
+    if current_user.role != "manager":
+        query = query.filter(models.Submission.user_id == current_user.id)
+    submission = query.first()
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
 
@@ -114,3 +114,26 @@ def delete_attachment(
         raise HTTPException(status_code=404, detail="File not found")
     os.remove(fpath)
     return {"detail": "Deleted"}
+
+@router.get("/download/{submission_id}/{filename}")
+def download_attachment(
+    submission_id: int,
+    filename: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    query = db.query(models.Submission).filter(models.Submission.id == submission_id)
+    if current_user.role != "manager":
+        query = query.filter(models.Submission.user_id == current_user.id)
+    submission = query.first()
+    if not submission:
+        raise HTTPException(status_code=404, detail="Submission not found")
+
+    upload_path = get_submission_upload_dir(submission_id)
+    safe_filename = filename.replace("..", "").replace("/", "_").replace("\\", "_")
+    fpath = os.path.join(upload_path, safe_filename)
+    
+    if not os.path.isfile(fpath):
+        raise HTTPException(status_code=404, detail="File not found")
+        
+    return FileResponse(path=fpath, filename=safe_filename)
